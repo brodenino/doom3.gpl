@@ -241,6 +241,9 @@ private:
 
 class idGameLocal : public idGame {
 public:
+	void	DV2549ProtocolTrace(const char* text);
+	void	DV2549AgentActivate(const char* text);
+
 	idDict					serverInfo;				// all the tunable parameters, like numclients, etc
 	int						numClients;				// pulled from serverInfo and verified
 	idDict					userInfo[MAX_CLIENTS];	// client specific settings

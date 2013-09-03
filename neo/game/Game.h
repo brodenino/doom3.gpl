@@ -71,6 +71,9 @@ typedef enum {
 
 class idGame {
 public:
+	bool	dv2549ProtocolTraced;
+	bool	dv2549AgentActivated;
+
 	virtual						~idGame() {}
 
 	// Initialize the game for the first time.

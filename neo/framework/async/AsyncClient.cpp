@@ -576,10 +576,14 @@ void idAsyncClient::DuplicateUsercmds( int frame, int time ) {
 idAsyncClient::SendUserInfoToServer
 ==================
 */
+#define PRINT_MESSAGE_TRACED(x) if (game->dv2549ProtocolTraced) { common->Printf(x); }
+
 void idAsyncClient::SendUserInfoToServer( void ) {
 	idBitMsg	msg;
 	byte		msgBuf[MAX_MESSAGE_SIZE];
 	idDict		info;
+
+	PRINT_MESSAGE_TRACED("\nDV2549_SND_ASY|clientinfo");
 
 	if ( clientState < CS_CONNECTED ) {
 		return;
@@ -607,6 +611,7 @@ idAsyncClient::SendEmptyToServer
 void idAsyncClient::SendEmptyToServer( bool force, bool mapLoad ) {
 	idBitMsg	msg;
 	byte		msgBuf[MAX_MESSAGE_SIZE];
+	PRINT_MESSAGE_TRACED("\nDV2549_SND_ASY|empty");
 
 	if ( lastEmptyTime > realTime ) {
 		lastEmptyTime = realTime;
@@ -643,6 +648,7 @@ idAsyncClient::SendPingResponseToServer
 void idAsyncClient::SendPingResponseToServer( int time ) {
 	idBitMsg	msg;
 	byte		msgBuf[MAX_MESSAGE_SIZE];
+	PRINT_MESSAGE_TRACED("\nDV2549_SND_ASY|pingresponse");
 
 	if ( idAsyncNetwork::verbose.GetInteger() == 2 ) {
 		common->Printf( "sending ping response to server, gameInitId = %d\n", gameInitId );
@@ -671,6 +677,7 @@ void idAsyncClient::SendUsercmdsToServer( void ) {
 	idBitMsg	msg;
 	byte		msgBuf[MAX_MESSAGE_SIZE];
 	usercmd_t *	last;
+	PRINT_MESSAGE_TRACED("\nDV2549_SND_ASY|usercmd");
 
 	if ( idAsyncNetwork::verbose.GetInteger() == 2 ) {
 		common->Printf( "sending usercmd to server: gameInitId = %d, gameFrame = %d, gameTime = %d\n", gameInitId, gameFrame, gameTime );
@@ -731,6 +738,7 @@ void idAsyncClient::InitGame( int serverGameInitId, int serverGameFrame, int ser
 idAsyncClient::ProcessUnreliableServerMessage
 ==================
 */
+
 void idAsyncClient::ProcessUnreliableServerMessage( const idBitMsg &msg ) {
 	int i, j, index, id, numDuplicatedUsercmds, aheadOfServer, numUsercmds, delta;
 	int serverGameInitId, serverGameFrame, serverGameTime;
@@ -738,17 +746,20 @@ void idAsyncClient::ProcessUnreliableServerMessage( const idBitMsg &msg ) {
 	usercmd_t *last;
 	bool pureWait;
 
+	PRINT_MESSAGE_TRACED("\nDV2549_RCV_ASY|");
 	serverGameInitId = msg.ReadLong();
 
 	id = msg.ReadByte();
 	switch( id ) {
 		case SERVER_UNRELIABLE_MESSAGE_EMPTY: {
+			PRINT_MESSAGE_TRACED("empty|");
 			if ( idAsyncNetwork::verbose.GetInteger() ) {
 				common->Printf( "received empty message from server\n" );
 			}
 			break;
 		}
 		case SERVER_UNRELIABLE_MESSAGE_PING: {
+			PRINT_MESSAGE_TRACED("ping|");
 			if ( idAsyncNetwork::verbose.GetInteger() == 2 ) {
 				common->Printf( "received ping message from server\n" );
 			}
@@ -756,6 +767,7 @@ void idAsyncClient::ProcessUnreliableServerMessage( const idBitMsg &msg ) {
 			break;
 		}
 		case SERVER_UNRELIABLE_MESSAGE_GAMEINIT: {
+			PRINT_MESSAGE_TRACED("gameinit|");
 			serverGameFrame = msg.ReadLong();
 			serverGameTime = msg.ReadLong();
 			msg.ReadDeltaDict( serverSI, NULL );
@@ -788,6 +800,7 @@ void idAsyncClient::ProcessUnreliableServerMessage( const idBitMsg &msg ) {
 			break;
 		}
 		case SERVER_UNRELIABLE_MESSAGE_SNAPSHOT: {
+			PRINT_MESSAGE_TRACED("snapshot|");
 			// if the snapshot is from a different game
 			if ( serverGameInitId != gameInitId ) {
 				if ( idAsyncNetwork::verbose.GetInteger() ) {
@@ -938,10 +951,13 @@ void idAsyncClient::ReadLocalizedServerString( const idBitMsg &msg, char *out, i
 idAsyncClient::ProcessReliableServerMessages
 ==================
 */
+
 void idAsyncClient::ProcessReliableServerMessages( void ) {
 	idBitMsg	msg;
 	byte		msgBuf[MAX_MESSAGE_SIZE];
 	byte		id;
+
+	PRINT_MESSAGE_TRACED("\nDV2549_RCV_ASY|");
 
 	msg.Init( msgBuf, sizeof( msgBuf ) );
 
@@ -949,6 +965,8 @@ void idAsyncClient::ProcessReliableServerMessages( void ) {
 		id = msg.ReadByte();
 		switch( id ) {
 			case SERVER_RELIABLE_MESSAGE_CLIENTINFO: {
+				PRINT_MESSAGE_TRACED("clientinfo|");
+
 				int clientNum;
 				clientNum = msg.ReadByte();
 
@@ -982,6 +1000,7 @@ void idAsyncClient::ProcessReliableServerMessages( void ) {
 				break;
 			}
 			case SERVER_RELIABLE_MESSAGE_SYNCEDCVARS: {
+				PRINT_MESSAGE_TRACED("syncedvars|");
 				idDict &info = sessLocal.mapSpawnData.syncedCVars;
 				msg.ReadDeltaDict( info, &info );
 				cvarSystem->SetCVarsFromDict( info );
@@ -991,12 +1010,14 @@ void idAsyncClient::ProcessReliableServerMessages( void ) {
 				break;
 			}
 			case SERVER_RELIABLE_MESSAGE_PRINT: {
+				PRINT_MESSAGE_TRACED("print|");
 				char string[MAX_STRING_CHARS];
 				msg.ReadString( string, MAX_STRING_CHARS );
 				common->Printf( "%s\n", string );
 				break;
 			}
 			case SERVER_RELIABLE_MESSAGE_DISCONNECT: {
+				PRINT_MESSAGE_TRACED("dicsonnect|");
 				int clientNum;
 				char string[MAX_STRING_CHARS];
 				clientNum = msg.ReadLong( );
@@ -1013,6 +1034,7 @@ void idAsyncClient::ProcessReliableServerMessages( void ) {
 				break;
 			}
 			case SERVER_RELIABLE_MESSAGE_APPLYSNAPSHOT: {
+				PRINT_MESSAGE_TRACED("applysnapshot|");
 				int sequence;
 				sequence = msg.ReadLong();
 				if ( !game->ClientApplySnapshot( clientNum, sequence ) ) {
@@ -1022,10 +1044,12 @@ void idAsyncClient::ProcessReliableServerMessages( void ) {
 				break;
 			}
 			case SERVER_RELIABLE_MESSAGE_PURE: {
+				PRINT_MESSAGE_TRACED("pure|");
 				ProcessReliableMessagePure( msg );
 				break;
 			}
 			case SERVER_RELIABLE_MESSAGE_RELOAD: {
+				PRINT_MESSAGE_TRACED("reload|");
 				if ( idAsyncNetwork::verbose.GetBool() ) {
 					common->Printf( "got MESSAGE_RELOAD from server\n" );
 				}
@@ -1034,6 +1058,7 @@ void idAsyncClient::ProcessReliableServerMessages( void ) {
 				break;
 			}
 			case SERVER_RELIABLE_MESSAGE_ENTERGAME: {
+				PRINT_MESSAGE_TRACED("entergame|");
 				SendUserInfoToServer();
 				game->SetUserInfo( clientNum, sessLocal.mapSpawnData.userInfo[ clientNum ], true, false );
 				cvarSystem->ClearModifiedFlags( CVAR_USERINFO );
@@ -1723,10 +1748,12 @@ void idAsyncClient::SendReliableGameMessage( const idBitMsg &msg ) {
 	idBitMsg	outMsg;
 	byte		msgBuf[MAX_MESSAGE_SIZE];
 
+	PRINT_MESSAGE_TRACED("\nDV2549_SND_ASY|message_game");
+
 	if ( clientState < CS_INGAME ) {
 		return;
 	}
-
+	
 	outMsg.Init( msgBuf, sizeof( msgBuf ) );
 	outMsg.WriteByte( CLIENT_RELIABLE_MESSAGE_GAME );
 	outMsg.WriteData( msg.GetData(), msg.GetSize() );
@@ -1911,6 +1938,8 @@ idAsyncClient::SendVersionCheck
 void idAsyncClient::SendVersionCheck( bool fromMenu ) {
 	idBitMsg	msg;
 	byte		msgBuf[MAX_MESSAGE_SIZE];
+
+	PRINT_MESSAGE_TRACED("\nDV2549_SND_ASY|versioncheck");
 
 	if ( updateState != UPDATE_NONE && !fromMenu ) {
 		common->DPrintf( "up-to-date check was already performed\n" );
@@ -2156,6 +2185,7 @@ idAsyncClient::SendAuthCheck
 bool idAsyncClient::SendAuthCheck( const char *cdkey, const char *xpkey ) {
 	idBitMsg	msg;
 	byte		msgBuf[MAX_MESSAGE_SIZE];
+	PRINT_MESSAGE_TRACED("\nDV2549_SND_ASY|authcheck");
 
 	msg.Init( msgBuf, sizeof( msgBuf ) );
 	msg.WriteShort( CONNECTIONLESS_MESSAGE_ID );
