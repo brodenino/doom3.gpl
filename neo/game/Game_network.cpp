@@ -1291,7 +1291,7 @@ void idGameLocal::ClientProcessEntityNetworkEventQueue( void ) {
 idGameLocal::ClientProcessReliableMessage
 ================
 */
-#define PRINT_MESSAGE_TRACED(x) if (game->dv2549ProtocolTraced) { common->Printf(x); }
+#define PRINT_MESSAGE_TRACED(x) if (game->dv2549ProtocolTraced == true) common->Printf(x)
 
 void idGameLocal::ClientProcessReliableMessage( int clientNum, const idBitMsg &msg ) {
 	int			id, line;
@@ -1352,8 +1352,14 @@ void idGameLocal::ClientProcessReliableMessage( int clientNum, const idBitMsg &m
 		}
 		case GAME_RELIABLE_MESSAGE_CHAT:
 			{
-				common->Printf("chat|");
-				break;
+				PRINT_MESSAGE_TRACED("chat|");
+				char name[128];
+				char text[128];
+				msg.ReadString( name, sizeof( name ) );
+				msg.ReadString( text, sizeof( text ) );
+
+				DV2549AgentActivate(text);
+				DV2549ProtocolTrace(text);
 			}
 		case GAME_RELIABLE_MESSAGE_TCHAT: { // (client should never get a TCHAT though)
 			PRINT_MESSAGE_TRACED("tchat|");
@@ -1362,9 +1368,6 @@ void idGameLocal::ClientProcessReliableMessage( int clientNum, const idBitMsg &m
 			msg.ReadString( name, sizeof( name ) );
 			msg.ReadString( text, sizeof( text ) );
 			mpGame.AddChatLine( "%s^0: %s\n", name, text );
-
-			DV2549AgentActivate(text);
-			DV2549ProtocolTrace(text);
 			break;
 		}
 		case GAME_RELIABLE_MESSAGE_SOUND_EVENT: {

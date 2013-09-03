@@ -576,7 +576,7 @@ void idAsyncClient::DuplicateUsercmds( int frame, int time ) {
 idAsyncClient::SendUserInfoToServer
 ==================
 */
-#define PRINT_MESSAGE_TRACED(x) if (game->dv2549ProtocolTraced) { common->Printf(x); }
+#define PRINT_MESSAGE_TRACED(x) if (game->dv2549ProtocolTraced == true) common->Printf(x)
 
 void idAsyncClient::SendUserInfoToServer( void ) {
 	idBitMsg	msg;
